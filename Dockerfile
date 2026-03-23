@@ -2,13 +2,8 @@ FROM node:20.12.2
 
 WORKDIR /app
 
-# Копируем файлы зависимостей отдельно (для кэширования)
-COPY app/package*.json ./
+# Копируем только файлы зависимостей
+COPY app/package.json app/package-lock.json ./
 
+# Устанавливаем их
 RUN npm install
-
-# Копируем остальной код
-COPY app/ .
-
-# Команда по умолчанию
-CMD ["make", "test"]
