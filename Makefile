@@ -1,4 +1,5 @@
 setup:
+	[ -f .env ] || cp .env.example .env
 	docker compose run --rm app make setup
 
 dev:
