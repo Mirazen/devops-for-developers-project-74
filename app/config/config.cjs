@@ -1,26 +1,26 @@
 require('dotenv').config();
 
-const isProduction = process.env.NODE_ENV === 'production';
-// Проверяем, задан ли хост базы данных (в Докере он будет 'db')
-const usePostgres = process.env.DATABASE_HOST || isProduction;
+// Если DATABASE_HOST не задан, значит мы не в Docker-окружении, используем sqlite
+const dialect = process.env.DATABASE_HOST ? 'postgres' : 'sqlite';
 
-const postgresConfig = {
+const config = {
   username: process.env.DATABASE_USERNAME || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'password',
   database: process.env.DATABASE_NAME || 'postgres',
-  host: process.env.DATABASE_HOST || 'db',
+  host: process.env.DATABASE_HOST, // Здесь НЕ ставим значение по умолчанию 'db'
   port: process.env.DATABASE_PORT || 5432,
-  dialect: 'postgres',
+  dialect: dialect,
+  storage: dialect === 'sqlite' ? './database.sqlite' : undefined,
 };
 
-const sqliteConfig = (storage) => ({
-  dialect: 'sqlite',
-  storage,
-});
-
 module.exports = {
-  // Если DATABASE_HOST не задан — используем SQLite (для тестов Хекслета на хосте)
-  development: usePostgres ? postgresConfig : sqliteConfig('./database.sqlite'),
-  test: usePostgres ? postgresConfig : sqliteConfig('./database.test.sqlite'),
-  production: postgresConfig,
+  development: config,
+  test: {
+    ...config,
+    storage: dialect === 'sqlite' ? './database.test.sqlite' : undefined,
+  },
+  production: {
+    ...config,
+    dialect: 'postgres', // В продакшене всегда Postgres
+  },
 };
