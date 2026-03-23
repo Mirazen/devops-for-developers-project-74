@@ -1,16 +1,16 @@
-const fs = require('fs');
 require('dotenv').config();
 
-// Проверяем, запущены ли мы в Docker
-const isDocker = fs.existsSync('/.dockerenv');
+const isProduction = process.env.NODE_ENV === 'production';
+// Проверяем, задан ли хост базы данных (в Докере он будет 'db')
+const usePostgres = process.env.DATABASE_HOST || isProduction;
 
 const postgresConfig = {
-  dialect: 'postgres',
-  database: process.env.DATABASE_NAME || 'postgres',
   username: process.env.DATABASE_USERNAME || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'password',
+  database: process.env.DATABASE_NAME || 'postgres',
   host: process.env.DATABASE_HOST || 'db',
   port: process.env.DATABASE_PORT || 5432,
+  dialect: 'postgres',
 };
 
 const sqliteConfig = (storage) => ({
@@ -19,8 +19,8 @@ const sqliteConfig = (storage) => ({
 });
 
 module.exports = {
-  // Если в докере — Postgres, если на хосте — SQLite
-  development: isDocker ? postgresConfig : sqliteConfig('./database.sqlite'),
-  test: isDocker ? postgresConfig : sqliteConfig('./database.test.sqlite'),
+  // Если DATABASE_HOST не задан — используем SQLite (для тестов Хекслета на хосте)
+  development: usePostgres ? postgresConfig : sqliteConfig('./database.sqlite'),
+  test: usePostgres ? postgresConfig : sqliteConfig('./database.test.sqlite'),
   production: postgresConfig,
 };
